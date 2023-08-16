@@ -12,7 +12,7 @@ class CatalogVersionInline(admin.StackedInline):
 
 class CatalogAdmin(admin.ModelAdmin):
     inlines = [CatalogVersionInline]
-    list_display = ('id', 'code', 'name', 'version')
+    list_display = ('id', 'code', 'name', 'version', 'startDate')
 
     def version(self, obj):
         try:
@@ -20,11 +20,28 @@ class CatalogAdmin(admin.ModelAdmin):
         except AttributeError:
             return None
 
+    def startDate(self, obj):
+        try:
+            return CatalogVersion.objects.filter(catalogID_id=obj.id).first().startDate
+        except AttributeError:
+            return None
+
 
 class CatalogVersionAdmin(admin.ModelAdmin):
-    list_display = ('catalogID', 'version', 'startDate')
+    list_display = ('catalogID', 'version', 'startDate', 'code', 'name')
     inlines = [CatalogElementInline]
 
+    def code(self, obj):
+        try:
+            return CatalogVersion.objects.filter(catalogID_id=obj.id).first().catalogID.code
+        except AttributeError:
+            return None
+
+    def name(self, obj):
+        try:
+            return CatalogVersion.objects.filter(catalogID_id=obj.id).first().catalogID.name
+        except AttributeError:
+            return None
 
 class CatalogElementAdmin(admin.ModelAdmin):
     list_display = ('catalogVersionID', 'elementCode', 'elementValue')
