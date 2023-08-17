@@ -1,8 +1,6 @@
 from datetime import datetime
 
-from rest_framework.viewsets import ModelViewSet
 from documents.models import Catalog, CatalogElement, CatalogVersion
-from documents.serializers import CatalogsSerializer
 
 from django.http import JsonResponse
 
@@ -88,9 +86,3 @@ def check_element(request, id):
         return JsonResponse('Element found', safe=False)
     return JsonResponse('Element not found', safe=False)
 
-
-
-
-class CatalogViewSet(ModelViewSet):
-    queryset = Catalog.objects.all()
-    serializer_class = CatalogsSerializer

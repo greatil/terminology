@@ -4,11 +4,6 @@ from rest_framework.routers import SimpleRouter
 
 from documents import views
 
-from documents.views import CatalogViewSet
-
-router = SimpleRouter()
-
-router.register('api/catalogs', CatalogViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,4 +12,3 @@ urlpatterns = [
     path('refbooks/<int:id>/check_element/', views.check_element, name='get_elements'),
 ]
 
-urlpatterns += router.urls
