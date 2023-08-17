@@ -1,64 +1,96 @@
-from rest_framework.decorators import action
+from datetime import datetime
+
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import generics
-from rest_framework.response import Response
-from documents.models import Catalog
+from documents.models import Catalog, CatalogElement, CatalogVersion
 from documents.serializers import CatalogsSerializer
 
-
-#возможно пригодится для гет запроса
 from django.http import JsonResponse
 
 
 def get_refbooks(request):
-    date = request.GET.get('startDate')  # Получаем значение параметра date из URL-запроса
-    if date:
-        catalogs = Catalog.objects.filter(startDate__lte=date)  # Фильтруем справочники по дате начала действия
-    else:
-        catalogs = Catalog.objects.all()
-    data = []  # Создаем список для хранения данных о справочниках
+    try:
+        input_date_str = request.GET.get('date')
+        input_date = datetime.strptime(input_date_str, '%Y-%m-%d').date()
+    except Exception as e:
+        return JsonResponse({'error': 'Invalid date parameter'}, status=400)
+
+    catalogs = Catalog.objects.filter(catalogversion__startDate__lte=input_date)
+
+    data = []
 
     for catalog in catalogs:
         catalog_data = {
             'id': catalog.id,
             'code': catalog.code,
-            'name': catalog.name,
-            'catalog_versions': catalog.catalog_versions
+            'name': catalog.name
         }
-        data.append(catalog_data)  # Добавляем данные о справочнике в список
+        data.append(catalog_data)
     response = {
         'refbooks': data
     }
-    return JsonResponse(response)  # Возвращаем данные в формате JSON
+    return JsonResponse(response)
+
+
+def get_elements(request, id):
+    try:
+        version = request.GET.get('version')
+        if version:
+            elements = CatalogElement.objects.filter(catalogVersionID=id, catalogVersionID_id__version=version)
+        else:
+            elements = CatalogElement.objects.filter(catalogVersionID=id,
+                                                     catalogVersionID_id__version=CatalogVersion.objects.filter(
+                                                         catalogID_id=id).latest('startDate').version)
+
+        data = []
+        for element in elements:
+            element_data = {
+                'code': element.elementCode,
+                'value': element.elementValue
+            }
+            data.append(element_data)
+
+        response = {
+            'elements': data
+        }
+        return JsonResponse(response)
+    except Catalog.DoesNotExist:
+        return JsonResponse({'error': 'Catalog does not exist'}, status=404)
+    except CatalogVersion.DoesNotExist:
+        return JsonResponse({'error': 'Catalog version does not exist'}, status=404)
+
+
+def check_element(request, id):
+    code = request.GET.get('code')
+    value = request.GET.get('value')
+    version = request.GET.get('version')
+
+    if version:
+        if (CatalogElement.objects.filter(catalogVersionID=id,
+                                          catalogVersionID_id__version=version).first().elementCode ==
+            code) and (CatalogElement.objects.filter(catalogVersionID=id,
+                                                     catalogVersionID_id__version=version).first().elementValue ==
+                       value):
+            response = 'Element found'
+        else:
+            response = 'Element not found'
+
+        return JsonResponse(response, safe=False)
+    else:
+        if (CatalogElement.objects.filter(catalogVersionID=id,
+                                          catalogVersionID_id__version=CatalogVersion.objects.filter(
+                                              catalogID_id=id).latest(
+                                              'startDate').version).first().elementCode ==
+            code) and (CatalogElement.objects.filter(catalogVersionID=id,
+                                                     catalogVersionID_id__version=CatalogVersion.objects.filter(
+                                                         catalogID_id=id).latest(
+                                                         'startDate').version).first().elementValue == value):
+            response = 'Element found'
+        else:
+            response = 'Element not found'
+
+        return JsonResponse(response, safe=False)
 
 
 class CatalogViewSet(ModelViewSet):
     queryset = Catalog.objects.all()
     serializer_class = CatalogsSerializer
-
-    # @action(detail=False, methods=['get'])
-    # def refbooks(self, request):
-    #    date = self.request.query_params.get('date')
-    #    if date:
-    #        queryset = Catalog.objects.filter(catalogversion__startDate__lte=date).distinct()
-    #    else:
-    #        queryset = Catalog.objects.all()
-    #
-    #    serializer = self.get_serializer(queryset, many=True)
-    #    return Response({"refbooks": serializer.data})
-
-
-# class RefbooksListView(generics.ListAPIView):
-#     serializer_class = CatalogsSerializer
-#
-#     def get_queryset(self):
-#         date = self.request.query_params.get('date')
-#         if date:
-#             return Catalog.objects.filter(catalogversion__startDate__lte=date).distinct('id')
-#         else:
-#             return Catalog.objects.all()
-#
-#     def list(self, request, *args, **kwargs):
-#         queryset = self.get_queryset()
-#         serializer = self.get_serializer(queryset, many=True)
-#         return Response({"refbooks": serializer.data})
