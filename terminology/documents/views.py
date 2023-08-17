@@ -53,10 +53,10 @@ def get_elements(request, id):
             'elements': data
         }
         return JsonResponse(response)
-    except Catalog.DoesNotExist:
-        return JsonResponse({'error': 'Catalog does not exist'}, status=404)
-    except CatalogVersion.DoesNotExist:
-        return JsonResponse({'error': 'Catalog version does not exist'}, status=404)
+    except Catalog.DoesNotExist as exception:
+        return JsonResponse({'error': exception}, status=404)
+    except CatalogVersion.DoesNotExist as exception:
+        return JsonResponse({'error': exception}, status=404)
 
 
 def check_element(request, id):
