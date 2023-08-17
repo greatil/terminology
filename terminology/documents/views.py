@@ -63,32 +63,32 @@ def check_element(request, id):
     code = request.GET.get('code')
     value = request.GET.get('value')
     version = request.GET.get('version')
+    catalog_v_e_table_by_version = CatalogElement.objects.filter(catalogVersionID=id,
+                                          catalogVersionID_id__version=version)
+    catalog_v_e_table_by_id = CatalogElement.objects.filter(catalogVersionID=id,
+                                      catalogVersionID_id__version=CatalogVersion.objects.filter(
+                                          catalogID_id=id).latest(
+                                          'startDate').version)
 
     if version:
-        if (CatalogElement.objects.filter(catalogVersionID=id,
-                                          catalogVersionID_id__version=version).first().elementCode ==
-            code) and (CatalogElement.objects.filter(catalogVersionID=id,
-                                                     catalogVersionID_id__version=version).first().elementValue ==
-                       value):
-            response = 'Element found'
-        else:
-            response = 'Element not found'
+        if not catalog_v_e_table_by_version:
+            return JsonResponse('Element not found', safe=False)
 
-        return JsonResponse(response, safe=False)
-    else:
-        if (CatalogElement.objects.filter(catalogVersionID=id,
-                                          catalogVersionID_id__version=CatalogVersion.objects.filter(
-                                              catalogID_id=id).latest(
-                                              'startDate').version).first().elementCode ==
-            code) and (CatalogElement.objects.filter(catalogVersionID=id,
-                                                     catalogVersionID_id__version=CatalogVersion.objects.filter(
-                                                         catalogID_id=id).latest(
-                                                         'startDate').version).first().elementValue == value):
-            response = 'Element found'
-        else:
-            response = 'Element not found'
+        if (catalog_v_e_table_by_version.first().elementCode == code) \
+                and (catalog_v_e_table_by_version.first().elementValue == value):
+            return JsonResponse('Element found', safe=False)
 
-        return JsonResponse(response, safe=False)
+        return JsonResponse('Element not found', safe=False)
+
+    if not catalog_v_e_table_by_id:
+        return JsonResponse('Element not found', safe=False)
+
+    if (catalog_v_e_table_by_id.first().elementCode == code) \
+            and (catalog_v_e_table_by_id.first().elementValue == value):
+        return JsonResponse('Element found', safe=False)
+    return JsonResponse('Element not found', safe=False)
+
+
 
 
 class CatalogViewSet(ModelViewSet):
