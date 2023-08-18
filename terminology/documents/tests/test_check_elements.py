@@ -26,7 +26,7 @@ class CheckElementTestCase(TestCase):
         request.GET['value'] = '12'
         request.GET['version'] = '1'
         result = check_element(request, 1)
-        expected_result = JsonResponse('Element not found', status=200, safe=False)
+        expected_result = JsonResponse('Element not found', status=400, safe=False)
         self.assertEqual(expected_result.content, result.content)
 
     def test_blank_version(self):
@@ -48,5 +48,5 @@ class CheckElementTestCase(TestCase):
         request.GET['value'] = '12345'
         request.GET['version'] = '2'
         result = check_element(request, 1)
-        expected_result = JsonResponse('Element not found', status=200, safe=False)
+        expected_result = JsonResponse('Element not found', status=400, safe=False)
         self.assertEqual(expected_result.content, result.content)

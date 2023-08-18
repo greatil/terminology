@@ -35,25 +35,13 @@ def get_elements(request, id):
         if version:
             elements = CatalogElement.objects.filter(catalogVersionID=id, catalogVersionID_id__version=version)
         else:
-            elements = CatalogElement.objects.filter(catalogVersionID=id,
-                                                     catalogVersionID_id__version=CatalogVersion.objects.filter(
-                                                         catalogID_id=id).latest('startDate').version)
+            latest_version = CatalogVersion.objects.filter(catalogID_id=id).latest('startDate').version
+            elements = CatalogElement.objects.filter(catalogVersionID=id, catalogVersionID_id__version=latest_version)
 
-        data = []
-        for element in elements:
-            element_data = {
-                'code': element.elementCode,
-                'value': element.elementValue
-            }
-            data.append(element_data)
-
-        response = {
-            'elements': data
-        }
+        data = [{'code': element.elementCode, 'value': element.elementValue} for element in elements]
+        response = {'elements': data}
         return JsonResponse(response)
-    except Catalog.DoesNotExist as exception:
-        return JsonResponse({'error': exception}, status=404)
-    except CatalogVersion.DoesNotExist as exception:
+    except (Catalog.DoesNotExist, CatalogVersion.DoesNotExist) as exception:
         return JsonResponse({'error': exception}, status=404)
 
 
